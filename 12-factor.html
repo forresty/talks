@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>使用 12-factor 的理念快速创建高可维护性的应用</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <style type="text/css">
+      @import url(//fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(//fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body {
+        font-family: 'Droid Serif';
+        color: white;
+      }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      ul li {
+        font-size: 25px;
+        padding-bottom: 12px;
+      }
+      ol li {
+        font-size: 20px;
+        padding-bottom: 15px;
+      }
+      p {
+        font-size: 30px;
+        line-height: 150%;
+      }
+      .agenda li {
+        font-size: 40px;
+      }
+      .remark-slide-content {
+        background-color: black;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# 使用 12-factor 的理念快速创建高可维护性的应用
+
+same 叶峰
+
+---
+
+class: agenda
+
+# 日程
+
+- 12-factor 背景
+- 12-factor 简介及应用
+
+---
+
+# 12-factor 背景
+
+12-factor (http://12factor.net) 是 [Heroku](http://heroku.com) 创始人 Adam Wiggins 提出来的 12 条理念。
+
+基于这套理念，开发团队可以快速高效地开发出具有高可维护性的互联网应用。
+
+---
+
+# Heroku
+
+- 最好的 Platform-as-a-Service (PaaS)
+- Yukihiro "Matz" Matsumoto (Ruby 作者)
+- Mattt Thompson (@mattt, GitHub 6.9K followers，无数 iOS 客户端及服务器端库作者)
+- Kenneth Reitz (@kennethreitz, GitHub 5.7K followers, Python requests 库作者)
+- 2010年即以2亿美金的高价被 Saleforce 收购
+
+
+* [http://techcrunch.com/2010/12/08/breaking-salesforce-buys-heroku-for-212-million-in-cash/](http://techcrunch.com/2010/12/08/breaking-salesforce-buys-heroku-for-212-million-in-cash/)
+
+---
+
+部署只需要一个 `git push` 命令
+
+![heroku deploy](heroku-push.png)
+
+
+---
+
+甚至可以 `fork`!!
+
+![heroku fork](heroku-fork.png)
+
+---
+
+# 如何做到？（以 Ruby 为例）
+
+- 使用 `Gemfile` 声明依赖的代码库
+- 使用 `Procfile` 声明服务进程
+
+
+---
+
+# 为什么不用 Heroku?
+
+- 慢
+- 贵
+- 墙
+
+---
+
+# 为什么不用开源的 Heroku clones （比如 dokku）?
+
+- overkill
+- 不完全满足需求
+
+---
+
+# 12-factor 简介及应用
+
+1. 一个子系统一个代码仓库存储，microservices 架构
+2. 显式声明依赖，每个子系统可以独立部署
+3. Unix 环境变量注入配置，以实现依赖反转
+4. 把外部数据库、缓存以及对其他子系统的依赖声明成资源
+5. 严格区分 build 和 run 的环境（预编译资源文件等)
+6. 除了持久化的服务之外，其他的服务应该是无状态的
+7. 通过绑定端口对外提供服务，前端使用 TCP proxy 分发请求
+8. 通过多进程服务模型进行应用扩容
+9. 快速启动，优雅关闭，不中端服务热部署
+10. 让开发、测试和部署环境越接近越好
+11. 把 log 当作事件流集中处理，而不是分散的文件
+12. 系统管理任务应该作为一次性的任务执行
+
+---
+
+# #1 microservices 架构
+
+Twitter 的每次公共 API 调用都产生超过 100 次的内部 API 调用*
+
+- 有利于开发团队进行协作
+- 降低部署成本，加快 bug 修复和新功能上线速度
+- A/B 测试
+
+基本已经是业界共识
+
+* [http://highscalability.com/scaling-twitter-making-twitter-10000-percent-faster](http://highscalability.com/scaling-twitter-making-twitter-10000-percent-faster)
+
+---
+
+每个子系统用一个代码仓库存储
+
+![repos](repos.png)
+
+    </textarea>
+    <script src="//gnab.github.io/remark/downloads/remark-latest.min.js">
+    </script>
+    <script>
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>
