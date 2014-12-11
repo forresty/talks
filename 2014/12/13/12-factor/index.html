@@ -332,6 +332,12 @@ class: center, middle
 - 未必是 HTTP 协议，也可以是 Redis / Thrift / ProtoBuf / XMPP 等
 - 通过在环境变量中声明，服务可以作为其他服务的依赖
 
+```shell
+# sample .env file
+SAME_SERVICES_API_ENDPOINT=http://localhost:10233
+SAME_READONLY_SERVICES_API_ENDPOINT=http://localhost:10234
+```
+
 ---
 
 ### 7-layer-aware TCP proxy
@@ -404,7 +410,7 @@ nohup ./run_some_command &
 
 ```shell
 # 依赖 apache，应用本身没有 self-contained，和其他应用容易冲突
-sudo restart apache
+sudo restart apache2
 ```
 
 ```shell
