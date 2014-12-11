@@ -63,6 +63,8 @@ class: agenda
 
 基于这套理念，开发团队可以快速高效地开发出具有高可维护性的互联网应用。
 
+有效对抗 "software erosion"
+
 ---
 
 # Heroku
@@ -246,10 +248,184 @@ class: center, middle
 
 # #3 配置存放在 Unix 环境变量中
 
+使用代码常量的坏处
+
+- 修改配置必须修改代码
+- 部署时需要不同配置怎么办？不同代码分支？
+
+使用配置文件的坏处
+
+- 容易提交到代码库里
+
+根据环境对配置进行分组的坏处
+
+- 不正交
 
 ---
 
 ![.env file](assets/env-file.png)
+
+![.env file](assets/more-env-file.png)
+
+---
+
+# #4 把外部依赖声明成资源
+
+- 帐号密码 (API_KEY, API_SECRET)
+- 数据库连接
+- Redis 连接
+- 其他子系统 (HTTP RESTful services)
+
+简单测试：
+
+你的代码是不是随时可以开源？
+
+---
+
+## .env 文件
+
+`Ruby`
+
+`foreman`
+
+`dotenv`
+
+---
+
+# #5 严格区分打包和运行环境
+
+`Capistrano` 是怎么做的:
+
+- `Rails` 在部署时压缩 JS/CSS
+- 每次部署生成一个独立文件夹
+- 部署成功后更改软链接
+
+---
+
+# #6 应用作为无状态的进程运行
+
+- 除了和持久化存储相关的服务，其他服务都应该是无状态的
+- "sticky session" 必须被避免
+
+---
+
+# #7 通过绑定端口对外提供服务
+
+- 应用内嵌 HTTP 库，如 Tornado, Thin, Jetty
+- 未必是 HTTP 协议，也可以是 Redis / Thrift / ProtoBuf / XMPP 等
+- 通过在环境变量中声明，服务可以作为其他服务的依赖
+
+---
+
+### 7-layer-aware TCP proxy
+
+基于 EventMachine (Linux epoll) 极低损耗 (< 10%)
+
+```ruby
+proxy do |data|
+  if data =~ %r{GET /senses} || data =~ %r{GET /movies}
+    { remote: ENV['SAME_READONLY_SERVICES_API_ENDPOINT'] }
+  elsif data =~ %r{POST /android} || data =~ %r{POST /ios}
+    { remote: ENV['PINOT_API_ENDPOINT'] }
+  elsif data =~ %r{POST /song}
+    { remote: ENV['MUSICBOX_API_ENDPOINT'] }
+  elsif data =~ %r{GET /sidekiq} || data =~ %r{POST /sidekiq}
+    { remote: ENV['SIDEKIQ_ENDPOINT'] }
+  else
+    { noop: true }
+  end
+end
+```
+
+[https://github.com/mojombo/proxymachine](https://github.com/mojombo/proxymachine)
+
+---
+
+# #8 通过多进程模型进行扩容
+
+- 进程内仍然可以进行多工 (multiplexing)，比如使用多线程或者事件模型
+- 因为服务都是无状态的，所以横向扩容很容易
+- 进程永远都不应该让自己变成 `daemon`
+- 让专门的进程管理器进行管理 (foreman, OS X launchd, Ubuntu Upstart)
+
+---
+
+### 进程管理
+
+```shell
+nohup ./run_some_command &
+```
+
+---
+
+### 进程管理
+
+- 进程挂掉了怎么办？
+- pid file?
+- 开机自动运行？
+- 不纯净的环境（额外或者错误的环境变量）
+- 不 DRY
+
+> Don’t start programs, run programs.
+
+* [http://grimoire.ca/devops/self-daemonization-sucks](http://grimoire.ca/devops/self-daemonization-sucks)
+* [http://jtimberman.housepub.org/blog/2012/12/29/process-supervision-solved-problem/](http://jtimberman.housepub.org/blog/2012/12/29/process-supervision-solved-problem/)
+
+---
+
+## 最简单方式？
+
+```shell
+sudo foreman export upstart /etc/init -a #{`pwd`.split('/').last.chomp} -u deploy
+```
+
+---
+
+# #9 快速启动，优雅关闭
+
+- 最小化启动时间
+- Crash-only design
+- 使用 Unix 信号控制进程 (Unicorn / Puma)
+
+---
+
+## #10 开发、测试和部署环境尽量接近
+
+> “代码是开发写的，在生产环境运行是运维的事情”
+
+> “机器太慢了，所以我在开发环境上用 `sqlite` 就好”
+
+- 持续集成
+- `homebrew`，必要时使用 `Vagrant` 等工具
+
+---
+
+# #11 把 log 当作事件流集中处理
+
+- 分散在各处的文件难以管理
+- 容易出现维护上的问题 (磁盘又满了？)
+
+使用 `Logplex`, `Logstash`, `Fluentd`, `Hadoop/Hive` 等工具
+
+小型团队可以考虑先使用 `Papertrail` 等云日志服务
+
+* [https://blog.logentries.com/2014/08/what-is-syslog/](https://blog.logentries.com/2014/08/what-is-syslog/)
+
+---
+
+# Papertrail
+
+![papertrail](assets/papertrail.png)
+
+---
+
+# #12 一次性的系统管理任务
+
+- 应该和应用进程在相同的环境中运行
+
+`rails console`
+
+`bundle exec`
 
 ---
 
