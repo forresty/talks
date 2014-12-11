@@ -17,10 +17,10 @@
         font-weight: normal;
       }
       ul li {
-        font-size: 25px;
+        font-size: 28px;
         padding-bottom: 12px;
       }
-      ol li {
+      .detail-list li {
         font-size: 20px;
         padding-bottom: 15px;
       }
@@ -69,9 +69,9 @@ class: agenda
 
 - 最好的 Platform-as-a-Service (PaaS)
 - Yukihiro "Matz" Matsumoto (Ruby 作者)
-- Mattt Thompson (@mattt, GitHub 6.9K followers，无数 iOS 客户端及服务器端库作者)
-- Kenneth Reitz (@kennethreitz, GitHub 5.7K followers, Python requests 库作者)
-- 2010年即以2亿美金的高价被 Saleforce 收购
+- [Mattt Thompson](https://github.com/mattt) (GitHub 6.9K fo，无数 iOS 客户端及服务器端库作者)
+- [Kenneth Reitz](https://github.com/kennethreitz) (GitHub 5.7K fo, Python requests 库作者)
+- 2010年即以2亿美金的高价被 Salesforce 收购
 
 
 * [http://techcrunch.com/2010/12/08/breaking-salesforce-buys-heroku-for-212-million-in-cash/](http://techcrunch.com/2010/12/08/breaking-salesforce-buys-heroku-for-212-million-in-cash/)
@@ -80,22 +80,32 @@ class: agenda
 
 部署只需要一个 `git push` 命令
 
-![heroku deploy](heroku-push.png)
+![heroku deploy](assets/heroku-push.png)
 
 
 ---
 
-甚至可以 `fork`!!
+甚至可以 `fork`!!!
 
-![heroku fork](heroku-fork.png)
+![heroku fork](assets/heroku-fork.png)
 
 ---
+
+class: detail-list
 
 # 如何做到？（以 Ruby 为例）
 
 - 使用 `Gemfile` 声明依赖的代码库
 - 使用 `Procfile` 声明服务进程
+- git `pre-receive` hook
+- `heroku-buildpack` 把代码编译成 "slug"
+- 文件系统是临时的，文件随时可能丢失
+- 显式声明使用的数据库和 Redis 等资源
+- 通过环境变量注入参数
+- 通过调整 `dyno` 参数进行横向扩容
+- log 全部作为流集中化处理
 
+* [https://devcenter.heroku.com/articles/how-heroku-works](https://devcenter.heroku.com/articles/how-heroku-works)
 
 ---
 
@@ -107,18 +117,30 @@ class: agenda
 
 ---
 
+class: center, middle
+
+# ╮(╯_╰)╭
+
+---
+
 # 为什么不用开源的 Heroku clones （比如 dokku）?
 
 - overkill
 - 不完全满足需求
 
+而且我们的目标是快速高效地开发可靠和稳定的产品
+
+不是为了写代码而写代码
+
 ---
+
+class: detail-list
 
 # 12-factor 简介及应用
 
-1. 一个子系统一个代码仓库存储，microservices 架构
-2. 显式声明依赖，每个子系统可以独立部署
-3. Unix 环境变量注入配置，以实现依赖反转
+1. 一个子系统一个代码仓库存储，每个子系统可以独立部署，microservices 架构
+2. 显式声明依赖，进行严格的环境隔离
+3. 把配置存储在 Unix 环境变量中
 4. 把外部数据库、缓存以及对其他子系统的依赖声明成资源
 5. 严格区分 build 和 run 的环境（预编译资源文件等)
 6. 除了持久化的服务之外，其他的服务应该是无状态的
@@ -137,6 +159,7 @@ Twitter 的每次公共 API 调用都产生超过 100 次的内部 API 调用*
 
 - 有利于开发团队进行协作
 - 降低部署成本，加快 bug 修复和新功能上线速度
+- 异常快速回滚和规避
 - A/B 测试
 
 基本已经是业界共识
@@ -145,9 +168,94 @@ Twitter 的每次公共 API 调用都产生超过 100 次的内部 API 调用*
 
 ---
 
-每个子系统用一个代码仓库存储
+### 每个子系统用一个代码仓库存储
 
-![repos](repos.png)
+![repos](assets/repos.png)
+
+---
+
+### 一份代码，多次部署
+
+![codebase-deploys](assets/codebase-deploys.png)
+
+- 无法用一份代码仓库存储：分布式系统架构
+- 一份代码被多个应用使用：应该切分成子系统或者代码库
+
+---
+
+## 示例
+
+- `same-model`
+- `same-services`
+- `same-readonly-services`
+
+---
+
+# #2 依赖声明和环境隔离
+
+`Ruby` 为例
+
+`Gemfile` 声明依赖，使用 `bundle exec` 进行环境隔离
+
+---
+
+### `Gemfile` 示例
+
+```ruby
+source 'http://ruby.taobao.org'
+
+gem 'sinatra'
+gem 'sinatra-contrib'
+gem 'puma'
+gem 'httparty'
+gem 'newrelic_rpm'
+gem 'sidekiq'
+
+group :development, :test do
+  gem 'foreman', platform: :ruby
+  gem 'rspec', '~> 2.12.0'
+  gem 'guard'
+  gem 'guard-rspec'
+  gem 'shotgun'
+  gem 'simplecov'
+  gem 'thin', platform: :ruby
+end
+
+gem 'redis-activesupport'
+gem 'rack-attack', require: 'rack/attack'
+gem 'rack-attack-rate-limit', require: 'rack/attack/rate-limit'
+
+gem 'honeybadger'
+```
+
+---
+
+`bundle exec`
+
+![bundle exec](assets/bundle-exec.png)
+
+该应用依赖的 `Sidekiq` 和系统默认的版本不一致！
+
+---
+
+class: center, middle
+
+## 当然可以用最近非常流行的 `docker`
+
+---
+
+# #3 配置存放在 Unix 环境变量中
+
+
+---
+
+![.env file](assets/env-file.png)
+
+---
+
+# 谢谢大家
+
+[http://github.com/forresty/talks](http://github.com/forresty/talks)
 
     </textarea>
     <script src="//gnab.github.io/remark/downloads/remark-latest.min.js">
