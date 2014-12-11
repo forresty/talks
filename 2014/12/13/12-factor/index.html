@@ -71,8 +71,8 @@ class: agenda
 
 - 最好的 Platform-as-a-Service (PaaS)
 - Yukihiro "Matz" Matsumoto (Ruby 作者)
-- [Mattt Thompson](https://github.com/mattt) (GitHub 6.9K fo，无数 iOS 客户端及服务器端库作者)
-- [Kenneth Reitz](https://github.com/kennethreitz) (GitHub 5.7K fo, Python requests 库作者)
+- Mattt Thompson (GitHub 6.9K fo，无数 iOS 客户端及服务器端库作者)
+- Kenneth Reitz (GitHub 5.7K fo, Python requests 库作者)
 - 2010年即以2亿美金的高价被 Salesforce 收购
 
 
@@ -187,9 +187,17 @@ Twitter 的每次公共 API 调用都产生超过 100 次的内部 API 调用*
 
 ## 示例
 
-- `same-model`
-- `same-services`
-- `same-readonly-services`
+`same-model`
+
+- 模型层，私有的 Ruby gem
+
+`same-readonly-services`
+
+- HTTP/JSON 服务，进行只读操作，接入只读的 MySQL 和 Redis。读写 Redis Cache
+
+`same-services`
+
+- HTTP/JSON 服务，进行只写操作。 `X-Rate-Limit`
 
 ---
 
@@ -390,7 +398,18 @@ end
 ### 进程管理
 
 ```shell
+# 这个……
 nohup ./run_some_command &
+```
+
+```shell
+# 依赖 apache，应用本身没有 self-contained，和其他应用容易冲突
+sudo restart apache
+```
+
+```shell
+# self-daemonization sucks
+bundle exec unicorn -c config/unicorn.rb -D
 ```
 
 ---
@@ -413,7 +432,15 @@ nohup ./run_some_command &
 ## 最简单方式？
 
 ```shell
-sudo foreman export upstart /etc/init -a #{`pwd`.split('/').last.chomp} -u deploy
+foreman export upstart /etc/init -a app_name -u deployer
+```
+
+Procfile 示例:
+
+```ruby
+web: bundle exec unicorn -p $PORT -c config/unicorn.rb
+warden: bundle exec ./bin/libra watch
+ninja: bundle exec ./bin/libra watch_redis
 ```
 
 ---
@@ -436,7 +463,7 @@ sudo foreman export upstart /etc/init -a #{`pwd`.split('/').last.chomp} -u deplo
 
 > “代码是开发写的，在生产环境运行是运维的事情”
 
-> “机器太慢了，所以我在开发环境上用 `sqlite` 就好”
+> “机器太慢，所以我在开发环境上用 `sqlite` 就好”
 
 - 持续集成
 - `homebrew`，必要时使用 `Vagrant` 等工具
