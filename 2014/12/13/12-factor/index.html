@@ -292,6 +292,10 @@ class: center, middle
 
 ---
 
+![dotenv](assets/dotenv.png)
+
+---
+
 # #5 严格区分打包和运行环境
 
 `Capistrano` 是怎么做的:
@@ -304,14 +308,19 @@ class: center, middle
 
 # #6 应用作为无状态的进程运行
 
-- 除了和持久化存储相关的服务，其他服务都应该是无状态的
-- "sticky session" 必须被避免
+除了和持久化存储相关的服务，其他服务都应该是无状态的
+
+"sticky session" 必须被避免
+
+- 不应该在进程内存中存放数据
+- 因为无法确保客户端下次请求也会被路由到该进程
 
 ---
 
 # #7 通过绑定端口对外提供服务
 
 - 应用内嵌 HTTP 库，如 Tornado, Thin, Jetty
+- 直接绑定端口对外提供服务，不依赖外部服务容器运行
 - 未必是 HTTP 协议，也可以是 Redis / Thrift / ProtoBuf / XMPP 等
 - 通过在环境变量中声明，服务可以作为其他服务的依赖
 
@@ -415,6 +424,12 @@ sudo foreman export upstart /etc/init -a #{`pwd`.split('/').last.chomp} -u deplo
 - Crash-only design
 - 使用 Unix 信号控制进程 (Unicorn / Puma)
 
+随时可以 kill 掉进程
+
+分布式系统健壮性
+
+* [Crash-only software: More than meets the eye](http://lwn.net/Articles/191059/)
+
 ---
 
 ## #10 开发、测试和部署环境尽量接近
@@ -425,6 +440,10 @@ sudo foreman export upstart /etc/init -a #{`pwd`.split('/').last.chomp} -u deplo
 
 - 持续集成
 - `homebrew`，必要时使用 `Vagrant` 等工具
+
+Quora 每次 commit 都被自动部署到服务器*
+
+* [http://www.quora.com/How-often-do-major-software-companies-push-code-to-production](http://www.quora.com/How-often-do-major-software-companies-push-code-to-production)
 
 ---
 
