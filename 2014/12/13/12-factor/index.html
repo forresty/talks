@@ -341,6 +341,34 @@ end
 
 ---
 
+在 `GitHub` 的应用
+
+```ruby
+class GitRouter
+  # Look at the routing table and return the correct address for +name+
+  # Returns "<host>:<port>" e.g. "ae8f31c.example.com:9418"
+  def self.lookup(name)
+    ...
+  end
+end
+
+# Perform content-aware routing based on the stream data. Here, the
+# header information from the Git protocol is parsed to find the 
+# username and a lookup routine is run on the name to find the correct
+# backend server. If no match can be made yet, do nothing with the
+# connection.
+proxy do |data|
+  if data =~ %r{^....git-upload-pack /([\w\.\-]+)/[\w\.\-]+\000host=\w+\000}
+    name = $1
+    { :remote => GitRouter.lookup(name) }
+  else
+    { :noop => true }
+  end
+end
+```
+
+---
+
 # #8 通过多进程模型进行扩容
 
 - 进程内仍然可以进行多工 (multiplexing)，比如使用多线程或者事件模型
