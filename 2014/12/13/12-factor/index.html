@@ -67,6 +67,18 @@ class: agenda
 
 ---
 
+# Software Erosion
+
+- 几个星期前自己写的代码，现在已经看不懂了
+- 写这份代码的人离职了
+- 遗留系统，要加新功能
+- 操作系统更新了
+- 内存不够用了，必须迁移
+
+等等
+
+---
+
 # Heroku
 
 - 最好的 Platform-as-a-Service (PaaS)
@@ -144,13 +156,13 @@ class: detail-list
 2. 显式声明依赖，进行严格的环境隔离
 3. 把配置存储在 Unix 环境变量中
 4. 把外部数据库、缓存以及对其他子系统的依赖声明成资源
-5. 严格区分 build 和 run 的环境（预编译资源文件等)
+5. 严格区分打包和运行的环境（预编译资源文件等)
 6. 除了持久化的服务之外，其他的服务应该是无状态的
 7. 通过绑定端口对外提供服务，前端使用 TCP proxy 分发请求
 8. 通过多进程服务模型进行应用扩容
 9. 快速启动，优雅关闭，不中端服务热部署
 10. 让开发、测试和部署环境越接近越好
-11. 把 log 当作事件流集中处理，而不是分散的文件
+11. 把日志当作事件流集中处理，而不是分散的文件
 12. 系统管理任务应该作为一次性的任务执行
 
 ---
@@ -364,6 +376,30 @@ end
 
 ---
 
+复制一份流量：
+
+```ruby
+Proxy.start(:host => "0.0.0.0", :port => 80, :debug => true) do |conn|
+  conn.server :srv, :host => "127.0.0.1", :port => 81
+
+  # modify / process request stream
+  conn.on_data do |data|
+    data
+  end
+
+  # modify / process response stream
+  conn.on_response do |backend, resp|
+    resp
+  end
+end
+```
+
+复制线上流量，在线 debug!
+
+[https://github.com/igrigorik/em-proxy](https://github.com/igrigorik/em-proxy)
+
+---
+
 在 `GitHub` 的应用
 
 ```ruby
@@ -471,8 +507,19 @@ ninja: bundle exec ./bin/libra watch_redis
 
 > “机器太慢，所以我在开发环境上用 `sqlite` 就好”
 
-- 持续集成
 - `homebrew`，必要时使用 `Vagrant` 等工具
+
+---
+
+# 持续集成
+
+![integrity](assets/integrity.png)
+
+---
+
+# 持续集成
+
+TDD/BDD overkill, regression testing is a must
 
 Quora 每次 commit 都被自动部署到服务器*
 
@@ -499,6 +546,12 @@ Quora 每次 commit 都被自动部署到服务器*
 
 ---
 
+# 日志报警
+
+![papertrail log alert](assets/papertrail-alert.png)
+
+---
+
 # #12 一次性的系统管理任务
 
 - 应该和应用进程在相同的环境中运行
@@ -509,7 +562,9 @@ Quora 每次 commit 都被自动部署到服务器*
 
 ---
 
-# 谢谢大家
+# 谢谢
+
+![wechat](assets/wechat.jpeg)
 
 [http://github.com/forresty/talks](http://github.com/forresty/talks)
 
@@ -517,7 +572,7 @@ Quora 每次 commit 都被自动部署到服务器*
     <script src="//gnab.github.io/remark/downloads/remark-latest.min.js">
     </script>
     <script>
-      var slideshow = remark.create();
+      var slideshow = remark.create({ratio: "4:3"});
     </script>
   </body>
 </html>
